@@ -4,9 +4,11 @@ import java.util.ArrayList;
 import java.util.List;
 
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.http.HttpStatus;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.bind.annotation.CrossOrigin;
+import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
@@ -27,6 +29,9 @@ import com.cst438.domain.Enrollment;
 import com.cst438.domain.GradebookDTO;
 import com.cst438.services.RegistrationService;
 
+//added dueDate
+import java.sql.Date;
+
 @RestController
 @CrossOrigin(origins = {"http://localhost:3000","http://localhost:3001"})
 public class GradeBookController {
@@ -39,7 +44,7 @@ public class GradeBookController {
 	
 	@Autowired
 	CourseRepository courseRepository;
-	
+
 	@Autowired
 	RegistrationService registrationService;
 	
@@ -47,7 +52,7 @@ public class GradeBookController {
 	@GetMapping("/gradebook")
 	public AssignmentListDTO getAssignmentsNeedGrading( ) {
 		
-		String email = "dwisneski@csumb.edu";  // user name (should be instructor's email) 
+		String email = "dwisneski@csumb.edu";  // username (should be instructor's email)
 		
 		List<Assignment> assignments = assignmentRepository.findNeedGradingByEmail(email);
 		AssignmentListDTO result = new AssignmentListDTO();
@@ -60,7 +65,7 @@ public class GradeBookController {
 	@GetMapping("/gradebook/{id}")
 	public GradebookDTO getGradebook(@PathVariable("id") Integer assignmentId  ) {
 		
-		String email = "dwisneski@csumb.edu";  // user name (should be instructor's email) 
+		String email = "dwisneski@csumb.edu";  // username (should be instructor's email)
 		Assignment assignment = checkAssignment(assignmentId, email);
 		
 		// get the enrollment for the course
@@ -89,13 +94,13 @@ public class GradeBookController {
 		return gradebook;
 	}
 	
-	@PostMapping("/course/{course_id}/finalgrades")
+	@PostMapping("/course/{course_id}/finalgrades") //IMPORTANDTLJDLF:J
 	@Transactional
 	public void calcFinalGrades(@PathVariable int course_id) {
 		System.out.println("Gradebook - calcFinalGrades for course " + course_id);
 		
 		// check that this request is from the course instructor 
-		String email = "dwisneski@csumb.edu";  // user name (should be instructor's email) 
+		String email = "dwisneski@csumb.edu";  // username (should be instructor's email)
 		
 		Course c = courseRepository.findById(course_id).orElse(null);
 		if (!c.getInstructor().equals(email)) {
@@ -136,8 +141,8 @@ public class GradeBookController {
 	@Transactional
 	public void updateGradebook (@RequestBody GradebookDTO gradebook, @PathVariable("id") Integer assignmentId ) {
 		
-		String email = "dwisneski@csumb.edu";  // user name (should be instructor's email) 
-		checkAssignment(assignmentId, email);  // check that user name matches instructor email of the course.
+		String email = "dwisneski@csumb.edu";  // username (should be instructor's email)
+		checkAssignment(assignmentId, email);  // check that username matches instructor email of the course.
 		
 		// for each grade in gradebook, update the assignment grade in database 
 		System.out.printf("%d %s %d\n",  gradebook.assignmentId, gradebook.assignmentName, gradebook.grades.size());
@@ -169,5 +174,57 @@ public class GradeBookController {
 		
 		return assignment;
 	}
+	
+	//As an instructor for a course , I can add a new assignment for my course.  The assignment has a name and a due date.
+	//returns the new assignment
+	@PostMapping("/gradebook/{course_id}/{dueDate}/{name}")
+	@Transactional
+	public Assignment addAssignment (@PathVariable int course_id, Date dueDate, String name) {
+		// check that this request is from the course instructor 
+		String email = "dwisneski@csumb.edu";  // user name (should be instructor's email)
+				
+		Course c = courseRepository.findById(course_id).orElse(null);
+		if (!c.getInstructor().equals(email)) {
+			throw new ResponseStatusException( HttpStatus.UNAUTHORIZED, "Not Authorized. " );
+		}
+		
+		Assignment newAssignment = new Assignment(); //change later
+		
+		//filling assignment
+		newAssignment.setCourse(c);
+		newAssignment.setDueDate(dueDate);
+		newAssignment.setName(name);
+		//will need to be graded
+		newAssignment.setNeedsGrading(1);
+		
+		return assignmentRepository.save(newAssignment);
+		
+	}
+	
+	
+	//As an instructor, I can change the name of the assignment for my course.
+	
+	//As an instructor, I can delete an assignment  for my course (only if there are no grades for the assignment).
+	//Course Id and the Assignment Id
+	@DeleteMapping("/gradebook/{course_id}/{id}")
+	public void deleteAssignment(@PathVariable int course_id, @PathVariable int id) {
+	
+		String email = "dwisneski@csumb.edu";  // username (should be instructor's email)
+		
+		Course c = courseRepository.findById(course_id).orElse(null);
+		if (!c.getInstructor().equals(email)) {
+			throw new ResponseStatusException( HttpStatus.UNAUTHORIZED, "Not Authorized. " );
+		}
+		
+		Assignment a = assignmentRepository.findById(id).orElse(null);
+		
+		if (a.equals(null)) {
+			throw new ResponseStatusException( HttpStatus.BAD_REQUEST, "No Assignment matching that Id. " );
+		}
+
+		assignmentRepository.deleteById(id);
+		
+	}
+
 
 }
