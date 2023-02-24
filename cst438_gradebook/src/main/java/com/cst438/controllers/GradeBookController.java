@@ -179,9 +179,9 @@ public class GradeBookController {
 	//returns the new assignment
 	@PostMapping("/gradebook/{course_id}/{dueDate}/{name}")
 	@Transactional
-	public Assignment addAssignment (@PathVariable int course_id, Date dueDate, String name) {
+	public Assignment addAssignment (@PathVariable int course_id, @PathVariable Date dueDate, @PathVariable String name) {
 		// check that this request is from the course instructor 
-		String email = "dwisneski@csumb.edu";  // user name (should be instructor's email)
+		String email = "dwisneski@csumb.edu";  // username (should be instructor's email)
 				
 		Course c = courseRepository.findById(course_id).orElse(null);
 		if (!c.getInstructor().equals(email)) {
@@ -207,6 +207,7 @@ public class GradeBookController {
 	//As an instructor, I can delete an assignment  for my course (only if there are no grades for the assignment).
 	//Course Id and the Assignment Id
 	@DeleteMapping("/gradebook/{course_id}/{id}")
+	@Transactional
 	public void deleteAssignment(@PathVariable int course_id, @PathVariable int id) {
 	
 		String email = "dwisneski@csumb.edu";  // username (should be instructor's email)
@@ -215,15 +216,17 @@ public class GradeBookController {
 		if (!c.getInstructor().equals(email)) {
 			throw new ResponseStatusException( HttpStatus.UNAUTHORIZED, "Not Authorized. " );
 		}
-		
+
 		Assignment a = assignmentRepository.findById(id).orElse(null);
-		
-		if (a.equals(null)) {
+
+		//throwing error if assignment doesn't exist
+		if (a == null) {
 			throw new ResponseStatusException( HttpStatus.BAD_REQUEST, "No Assignment matching that Id. " );
 		}
-
-		assignmentRepository.deleteById(id);
-		
+		//deleting assignment
+		//will throw an error if there are grades
+		//System.out.println("Assignment: " + a);
+		assignmentRepository.delete(a);
 	}
 
 
