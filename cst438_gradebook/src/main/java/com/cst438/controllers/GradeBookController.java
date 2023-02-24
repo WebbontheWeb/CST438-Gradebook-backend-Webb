@@ -203,6 +203,28 @@ public class GradeBookController {
 	
 	
 	//As an instructor, I can change the name of the assignment for my course.
+	@PutMapping("/gradebook/{course_id}/{id}/{name}")
+	@Transactional
+	public Assignment updateAssignmentName (@PathVariable int course_id, @PathVariable int id, @PathVariable String name) {
+		// check that this request is from the course instructor
+		String email = "dwisneski@csumb.edu";  // username (should be instructor's email)
+
+		Course c = courseRepository.findById(course_id).orElse(null);
+		if (!c.getInstructor().equals(email)) {
+			throw new ResponseStatusException( HttpStatus.UNAUTHORIZED, "Not Authorized. " );
+		}
+
+		Assignment a = assignmentRepository.findById(id).orElse(null);
+
+		//throwing error if assignment doesn't exist
+		if (a == null) {
+			throw new ResponseStatusException( HttpStatus.BAD_REQUEST, "No Assignment matching that Id. " );
+		}
+		//setting name and adding it back to the repository
+		a.setName(name);
+		return assignmentRepository.save(a);
+
+	}
 	
 	//As an instructor, I can delete an assignment  for my course (only if there are no grades for the assignment).
 	//Course Id and the Assignment Id
