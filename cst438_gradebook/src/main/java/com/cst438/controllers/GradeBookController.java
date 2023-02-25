@@ -219,7 +219,10 @@ public class GradeBookController {
 		//throwing error if assignment doesn't exist
 		if (a == null) {
 			throw new ResponseStatusException( HttpStatus.BAD_REQUEST, "No Assignment matching that Id. " );
+		} else if(a.getCourse() != c){ //making sure course has that assignment
+			throw new ResponseStatusException( HttpStatus.BAD_REQUEST, "No Assignment matching that Id in course. " );
 		}
+		
 		//setting name and adding it back to the repository
 		a.setName(name);
 		return assignmentRepository.save(a);
@@ -244,6 +247,8 @@ public class GradeBookController {
 		//throwing error if assignment doesn't exist
 		if (a == null) {
 			throw new ResponseStatusException( HttpStatus.BAD_REQUEST, "No Assignment matching that Id. " );
+		} else if(a.getCourse() != c){ //making sure course has that assignment
+			throw new ResponseStatusException( HttpStatus.BAD_REQUEST, "No Assignment matching that Id in course. " );
 		}
 		//deleting assignment
 		//will throw an error if there are grades
