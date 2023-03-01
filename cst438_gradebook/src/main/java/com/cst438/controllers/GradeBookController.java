@@ -222,7 +222,7 @@ public class GradeBookController {
 		} else if(a.getCourse() != c){ //making sure course has that assignment
 			throw new ResponseStatusException( HttpStatus.BAD_REQUEST, "No Assignment matching that Id in course. " );
 		}
-		
+
 		//setting name and adding it back to the repository
 		a.setName(name);
 		return assignmentRepository.save(a);
