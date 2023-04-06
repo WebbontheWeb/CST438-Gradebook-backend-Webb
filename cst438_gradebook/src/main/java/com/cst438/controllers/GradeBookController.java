@@ -187,7 +187,7 @@ public class GradeBookController {
 		if (!c.getInstructor().equals(email)) {
 			throw new ResponseStatusException( HttpStatus.UNAUTHORIZED, "Not Authorized. " );
 		}
-		
+
 		Assignment newAssignment = new Assignment(); //change later
 		
 		//filling assignment
