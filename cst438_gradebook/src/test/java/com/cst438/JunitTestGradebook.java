@@ -417,6 +417,8 @@ public class JunitTestGradebook {
 
 		// makes sure an error message isn't being sent
 		assertEquals(200, response.getStatus());
+
+		verify(assignmentRepository).delete(assignment);
 	}
 
 
