@@ -24,6 +24,7 @@ import com.cst438.domain.Course;
 import com.cst438.domain.CourseRepository;
 import com.cst438.domain.Enrollment;
 import com.cst438.domain.EnrollmentRepository;
+import org.springframework.transaction.annotation.Transactional;
 
 /*
  * This example shows how to use selenium testing using the web driver 
@@ -42,7 +43,7 @@ import com.cst438.domain.EnrollmentRepository;
 @SpringBootTest
 public class EndToEndTestSubmitGrades {
 
-	public static final String CHROME_DRIVER_FILE_LOCATION = "C:/chromedriver_win32/chromedriver.exe";
+	public static final String CHROME_DRIVER_FILE_LOCATION = "/Users/webbontheweb/Downloads/chromedriver_mac_arm64/chromedriver";
 
 	public static final String URL = "http://localhost:3000";
 	public static final String TEST_USER_EMAIL = "test@csumb.edu";
@@ -65,6 +66,7 @@ public class EndToEndTestSubmitGrades {
 	AssignmentRepository assignmentRepository;
 
 	@Test
+	//@Transactional
 	public void addCourseTest() throws Exception {
 
 //		Database setup:  create course		
@@ -89,9 +91,12 @@ public class EndToEndTestSubmitGrades {
 		e.setStudentEmail(TEST_USER_EMAIL);
 		e.setStudentName(TEST_STUDENT_NAME);
 
+		System.out.println("Saving stuff");
 		courseRepository.save(c);
 		a = assignmentRepository.save(a);
 		e = enrollmentRepository.save(e);
+
+		System.out.println("Assignment Saved: " + a);
 
 		AssignmentGrade ag = null;
 
@@ -177,6 +182,7 @@ public class EndToEndTestSubmitGrades {
 			// verify that assignment_grade has been added to database with score of 99.9
 			ag = assignnmentGradeRepository.findByAssignmentIdAndStudentEmail(a.getId(), TEST_USER_EMAIL);
 			assertEquals("99.9", ag.getScore());
+			System.out.println("Testing Time!");
 
 		} catch (Exception ex) {
 			throw ex;
