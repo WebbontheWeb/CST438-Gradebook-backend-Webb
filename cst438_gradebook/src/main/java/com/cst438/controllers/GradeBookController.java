@@ -94,7 +94,7 @@ public class GradeBookController {
 		return gradebook;
 	}
 	
-	@PostMapping("/course/{course_id}/finalgrades") //IMPORTANDTLJDLF:J
+	@PostMapping("/course/{course_id}/finalgrades")
 	@Transactional
 	public void calcFinalGrades(@PathVariable int course_id) {
 		System.out.println("Gradebook - calcFinalGrades for course " + course_id);
@@ -222,7 +222,6 @@ public class GradeBookController {
 		} else if(a.getCourse() != c){ //making sure course has that assignment
 			throw new ResponseStatusException( HttpStatus.BAD_REQUEST, "No Assignment matching that Id in course. " );
 		}
-
 		//setting name and adding it back to the repository
 		a.setName(name);
 		return assignmentRepository.save(a);

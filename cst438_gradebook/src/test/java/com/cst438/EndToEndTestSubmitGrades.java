@@ -24,6 +24,7 @@ import com.cst438.domain.Course;
 import com.cst438.domain.CourseRepository;
 import com.cst438.domain.Enrollment;
 import com.cst438.domain.EnrollmentRepository;
+import org.springframework.transaction.annotation.Transactional;
 
 /*
  * This example shows how to use selenium testing using the web driver 
@@ -42,7 +43,7 @@ import com.cst438.domain.EnrollmentRepository;
 @SpringBootTest
 public class EndToEndTestSubmitGrades {
 
-	public static final String CHROME_DRIVER_FILE_LOCATION = "C:/chromedriver_win32/chromedriver.exe";
+	public static final String CHROME_DRIVER_FILE_LOCATION = "/Users/webbontheweb/Downloads/chromedriver_mac_arm64/chromedriver";
 
 	public static final String URL = "http://localhost:3000";
 	public static final String TEST_USER_EMAIL = "test@csumb.edu";
@@ -51,6 +52,8 @@ public class EndToEndTestSubmitGrades {
 	public static final String TEST_ASSIGNMENT_NAME = "Test Assignment";
 	public static final String TEST_COURSE_TITLE = "Test Course";
 	public static final String TEST_STUDENT_NAME = "Test";
+
+	public static final Integer TEST_CLASS_ID = 99999;
 
 	@Autowired
 	EnrollmentRepository enrollmentRepository;
@@ -65,11 +68,12 @@ public class EndToEndTestSubmitGrades {
 	AssignmentRepository assignmentRepository;
 
 	@Test
+	//@Transactional
 	public void addCourseTest() throws Exception {
 
 //		Database setup:  create course		
 		Course c = new Course();
-		c.setCourse_id(99999);
+		c.setCourse_id(TEST_CLASS_ID);
 		c.setInstructor(TEST_INSTRUCTOR_EMAIL);
 		c.setSemester("Fall");
 		c.setYear(2021);
@@ -89,9 +93,12 @@ public class EndToEndTestSubmitGrades {
 		e.setStudentEmail(TEST_USER_EMAIL);
 		e.setStudentName(TEST_STUDENT_NAME);
 
+		System.out.println("Saving stuff");
 		courseRepository.save(c);
 		a = assignmentRepository.save(a);
 		e = enrollmentRepository.save(e);
+
+		System.out.println("Assignment Saved: " + a);
 
 		AssignmentGrade ag = null;
 
@@ -140,8 +147,9 @@ public class EndToEndTestSubmitGrades {
 			/*
 			 *  Locate and click Grade button to indicate to grade this assignment.
 			 */
-			
-			driver.findElement(By.xpath("//a")).click();
+
+			//since there are multiple buttons I have to specify which one
+			driver.findElement(By.name("gradeButton")).click(); //(By.xpath("//a")).click();
 			Thread.sleep(SLEEP_DURATION);
 
 			/*
@@ -177,6 +185,7 @@ public class EndToEndTestSubmitGrades {
 			// verify that assignment_grade has been added to database with score of 99.9
 			ag = assignnmentGradeRepository.findByAssignmentIdAndStudentEmail(a.getId(), TEST_USER_EMAIL);
 			assertEquals("99.9", ag.getScore());
+			System.out.println("Testing Time!");
 
 		} catch (Exception ex) {
 			throw ex;
@@ -194,5 +203,100 @@ public class EndToEndTestSubmitGrades {
 			driver.quit();
 		}
 
+	}
+
+	@Test
+	//@Transactional
+	public void addAssignmentTest() throws Exception {
+
+//		Database setup:  create course
+		Course c = new Course();
+		c.setCourse_id(99999);
+		c.setInstructor(TEST_INSTRUCTOR_EMAIL);
+		c.setSemester("Fall");
+		c.setYear(2021);
+		c.setTitle(TEST_COURSE_TITLE);
+
+		System.out.println("Saving stuff");
+		courseRepository.save(c);
+
+		//System.out.println("Assignment Saved: " + a);
+
+		// set the driver location and start driver
+		//@formatter:off
+		// browser	property name 				Java Driver Class
+		// edge 	webdriver.edge.driver 		EdgeDriver
+		// FireFox 	webdriver.firefox.driver 	FirefoxDriver
+		// IE 		webdriver.ie.driver 		InternetExplorerDriver
+		//@formatter:on
+
+		/*
+		 * initialize the WebDriver and get the home page.
+		 */
+
+		System.setProperty("webdriver.chrome.driver", CHROME_DRIVER_FILE_LOCATION);
+		WebDriver driver = new ChromeDriver();
+		// Puts an Implicit wait for 10 seconds before throwing exception
+		driver.manage().timeouts().implicitlyWait(10, TimeUnit.SECONDS);
+
+		driver.get(URL);
+		Thread.sleep(SLEEP_DURATION);
+
+
+		try {
+			//clicking on addAssignment button
+			driver.findElement(By.name("addAssignmentButton")).click();
+			Thread.sleep(SLEEP_DURATION);
+
+			driver.findElement(By.name("assignmentName")).sendKeys(TEST_ASSIGNMENT_NAME);
+			driver.findElement(By.name("classId")).sendKeys(TEST_CLASS_ID.toString());
+			//driver.findElement(By.id("mui-2")).sendKeys("02032023");
+			//getting the date picker to work was a massive pain
+			driver.findElement(By.xpath("//button[@aria-label='Choose date']")).click();
+			driver.findElement(By.xpath("//button[@tabindex='-1']")).click();
+			Thread.sleep(SLEEP_DURATION);
+
+			/*
+			 *  Locate submit button and click
+			 */
+
+			driver.findElement(By.name("Submit")).click();
+			Thread.sleep(SLEEP_DURATION);
+
+			driver.findElement(By.name("Back")).click();
+
+			/*
+			 *  verify that score show up in updated data grid table
+			 */
+
+			List<WebElement> elements  = driver.findElements(By.xpath("//div[@data-field='assignmentName']/div"));
+			boolean found = false;
+			for (WebElement we : elements) {
+				System.out.println(we.getText()); // for debug
+				if (we.getText().equals(TEST_ASSIGNMENT_NAME)) {
+					found=true;
+					break;
+				}
+			}
+			Thread.sleep(SLEEP_DURATION);
+
+			assertTrue(found, "Found created assignment.");
+
+		} catch (Exception ex) {
+			throw ex;
+		} finally {
+
+			/*
+			 *  clean up database so the test is repeatable.
+			 */
+			for (Assignment assignment : assignmentRepository.findAll()){
+				if(assignment.getName().equals(TEST_ASSIGNMENT_NAME)){
+					assignmentRepository.delete(assignment);
+				}
+			}
+			courseRepository.delete(c);
+
+			driver.quit();
+		}
 	}
 }
